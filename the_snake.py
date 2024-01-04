@@ -73,7 +73,6 @@ class Apple(GameObject):
 
     def randomize_position(self):
         """Метод задачи координат случайного положения яблока на поле"""
-
         return (
             randint(0, GRID_WIDTH - 1) * GRID_SIZE,
             randint(0, GRID_HEIGHT - 1) * GRID_SIZE
