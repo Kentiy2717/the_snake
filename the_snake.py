@@ -46,7 +46,6 @@ class GameObject:
 
     def draw(self):
         """Заготовка метода отрисовки объекта на игровом поле"""
-
         pass
 
 
@@ -61,7 +60,6 @@ class Apple(GameObject):
 
     def randomize_position(self):
         """Метод задачи координат случайного положения яблока на поле"""
-
         return (
             randint(0, GRID_WIDTH) * GRID_SIZE,
             randint(0, GRID_HEIGHT) * GRID_SIZE
@@ -69,7 +67,6 @@ class Apple(GameObject):
 
     def draw(self, surface):
         """Метод отрисовки яблока на игровом поле"""
-
         rect = pygame.Rect(
             (self.position[0], self.position[1]),
             (GRID_SIZE, GRID_SIZE)
@@ -95,19 +92,16 @@ class Snake(GameObject):
 
     def update_direction(self):
         """Метод обновления движения змейки"""
-
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
 
     def get_head_position(self):
         """Метод возвращающий координаты головы змеи"""
-
         return self.position[0]
 
     def move(self, apple_position):
         """Метод задачи координат змейки на игровом поле"""
-
         head_now = self.get_head_position()
         if head_now[0] == SCREEN_WIDTH:
             head_then = (
@@ -152,7 +146,6 @@ class Snake(GameObject):
 
     def draw(self, surface):
         """Метод отрисовки змейки на игровом поле"""
-
         for position in self.position[:-1]:
             rect = pygame.Rect(
                 (position[0], position[1]),
@@ -174,7 +167,6 @@ class Snake(GameObject):
 
     def reset(self):
         """Метод сброса змейки при столкновении"""
-
         self.length = 1
         self.position = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
@@ -183,7 +175,6 @@ class Snake(GameObject):
 
 def handle_keys(game_object):
     """Функция обработки нажатия клавиш"""
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -200,7 +191,6 @@ def handle_keys(game_object):
 
 def main():
     """Функция основного цикла игры"""
-
     snake = Snake()
     apple = Apple()
 
