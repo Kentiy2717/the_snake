@@ -1,6 +1,7 @@
 from random import choice, randint
 
 import pygame as pg
+
 import sys
 
 # Константы для размеров поля и сетки:
@@ -31,6 +32,11 @@ screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
 # Центр игрового поля
 SCREEN_CENTER = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
+
+# Случайные значения координат яблока
+apple_position_start = (randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                        randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+                        )
 
 # Заголовок окна игрового поля:
 pg.display.set_caption('Змейка -лучшая игра! Для выхода жми "X" или "Esc"')
@@ -73,29 +79,19 @@ class GameObject:
 class Apple(GameObject):
     """Наследуемый класс описывающий яблоко и действия с ним"""
 
-    def __init__(self, snake_positions=SCREEN_CENTER) -> None:
+    def __init__(self, snake_positions=SCREEN_CENTER,
+                 apple_position=apple_position_start) -> None:
         self.body_color = RED
         self.snake_positions = snake_positions
-        self.position = self.randomize_position()
+        self.position = apple_position
 
-    def randomize_position(self):
+    def randomize_position(self, snake_positions):
         """Метод задачи координат случайного положения яблока на поле"""
-        # Не понял что значит "Вместо возврата лучше изменить поля."
-        # Я все-таки лучше бы проверку тоже в main делал.
-        # Не понимаю зачем позицию змейки в яблоко тащить.
-        apple_position = (
-            randint(0, GRID_WIDTH - 1) * GRID_SIZE,
-            randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-        )
-
-        while apple_position in self.snake_positions:
-            print('Попал в змею')
-            clock.tick(0.5)
-            apple_position = (
+        while self.position in snake_positions:
+            self.position = (
                 randint(0, GRID_WIDTH - 1) * GRID_SIZE,
                 randint(0, GRID_HEIGHT - 1) * GRID_SIZE
             )
-        return apple_position
 
     def draw(self, surface):
         """Метод отрисовки яблока на игровом поле"""
@@ -132,7 +128,7 @@ class Snake(GameObject):
         """Метод возвращающий координаты головы змеи"""
         return self.positions[0]
 
-    def move(self, snake_eat_apple=False):
+    def move(self):
         """Метод задачи координат змейки на игровом поле"""
         head_now = self.get_head_position()
         head_then = (
@@ -144,11 +140,15 @@ class Snake(GameObject):
         self.positions.insert(0, head_then)
 
         # Убираем след от хвоста
-        if not snake_eat_apple:
+        if self.length < len(self.positions):
             self.last = list.pop(self.positions, -1)
 
     def draw(self, surface):
         """Метод отрисовки змейки на игровом поле"""
+        # В моем случае это не личший цикл, так как голова и тело змеи разные.
+        # Тело имеет черный контур, чтобы казалось меньше.
+        # Запустите игру, чтобы понять о чем я говорю.
+        # В Пачке прислал скрин еще.
         for position in self.positions[:-1]:
             GameObject.draw(self, surface, position,
                             self.body_color, self.foreground_color)
@@ -164,19 +164,13 @@ class Snake(GameObject):
 
     def reset(self):
         """Метод сброса змейки при столкновении"""
-        # Совсем не понял как я должен 165-167 заменить на конструктор.
+        # В Пачке написал догадку, почему reset в init некорректен.
         self.length = 1
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
         # 167 вообще нельзя на конструктор менять.
         # В задании начальное движение это RIGHT.
         # А после выигрыша/проирыша рандобное.
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
-        # Что значит "нужно менять поля, а не рисовать"?
-        # Мне поле же надо черным сделать, чтобы закрасить прошлое.
-        # Потом на черном поле уже заново отрисуется змейка и яблоко.
-        screen.fill(BOARD_BACKGROUND_COLOR)
-        global SPEED
-        SPEED = 5
 
 
 def handle_keys(game_object):
@@ -204,6 +198,8 @@ def main():
 
     snake = Snake()
     apple = Apple(snake.positions)
+    # Рисуем первое яблоко.
+    apple.draw(screen)
 
     while True:
         global SPEED
@@ -214,9 +210,11 @@ def main():
         snake.update_direction()
         snake.move()
 
-        # Проверка на столкновение. Выводим "экран лузера"
+        # Проверка на столкновение. Выводим "экран лузера".
+        # Если голова оказалась в теле, то выполняем тело цикла.
         for _ in range(1, len(snake.positions)):
-            if snake.positions[0] == snake.positions[_]:
+            # Если голова оказалась в теле, то выполняем тело цикла.
+            if snake.get_head_position() == snake.positions[_]:
                 car_surf = pg.image.load("game-over.jpg")
                 car_rect = car_surf.get_rect(
                     center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -225,20 +223,23 @@ def main():
                 pg.display.update()
                 clock.tick(0.5)
                 snake.reset()
+                SPEED = 5
+                screen.fill(BOARD_BACKGROUND_COLOR)
+                # Рисуем новое яблоко.
+                apple.draw(screen)
                 break
 
         # Если змея съела яблоко:
-        if snake.positions[0] == apple.position:
-            # "удлиняем" змею
-            snake.move(True)
-            # "кидаем" новое яблоко.
-            apple.position = apple.randomize_position()
-            # Я бы оставил так как ниже. Зачем делать эту проверку в apple?
-            # Проверяем не попали ли в змею. Если попали, то куда "отскочило".
-            # while apple.position in snake.positions:
-            #     apple.position = apple.randomize_position()
+        if snake.get_head_position() == apple.position:
+            # "Удлиняем" змею
+            snake.length += 1
+            # "Кидаем" новое яблоко.
+            apple.randomize_position(snake.positions)
+            # Рисуем новое яблоко.
+            apple.draw(screen)
             # Увеличиваем скорость.
             SPEED += 1
+
         # проверяем на выигрышь и выводим "экран победителя"
         if SPEED == 30:
             car_surf = pg.image.load("win.jpg")
@@ -249,7 +250,10 @@ def main():
             pg.display.update()
             clock.tick(0.5)
             snake.reset()
-        apple.draw(screen)
+            SPEED = 5
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            apple.draw(screen)
+
         snake.draw(screen)
         pg.display.update()
 
