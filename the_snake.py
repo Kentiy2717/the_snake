@@ -1,8 +1,8 @@
 from random import choice, randint
+import sys  # Получается тут должен быть. Он в стандартной библиотеке.
 
 import pygame as pg
 
-import sys
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -79,10 +79,8 @@ class GameObject:
 class Apple(GameObject):
     """Наследуемый класс описывающий яблоко и действия с ним"""
 
-    def __init__(self, snake_positions=SCREEN_CENTER,
-                 apple_position=apple_position_start) -> None:
+    def __init__(self, apple_position=apple_position_start) -> None:
         self.body_color = RED
-        self.snake_positions = snake_positions
         self.position = apple_position
 
     def randomize_position(self, snake_positions):
@@ -105,18 +103,15 @@ class Snake(GameObject):
                  body_color_value=GREEN,
                  direction=RIGHT,
                  last=None,
-                 length=1,
                  next_direction=None,
-                 positions_value=SCREEN_CENTER,
                  foreground_color=None
                  ) -> None:
         super().__init__(foreground_color)
         self.body_color = body_color_value
-        self.direction = direction
         self.last = last
-        self.length = length
         self.next_direction = next_direction
-        self.positions = positions_value
+        self.reset()
+        self.direction = direction
 
     def update_direction(self):
         """Метод обновления движения змейки"""
@@ -164,12 +159,8 @@ class Snake(GameObject):
 
     def reset(self):
         """Метод сброса змейки при столкновении"""
-        # В Пачке написал догадку, почему reset в init некорректен.
         self.length = 1
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
-        # 167 вообще нельзя на конструктор менять.
-        # В задании начальное движение это RIGHT.
-        # А после выигрыша/проирыша рандобное.
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
 
 
@@ -197,7 +188,7 @@ def main():
     pg.init()
 
     snake = Snake()
-    apple = Apple(snake.positions)
+    apple = Apple()
     # Рисуем первое яблоко.
     apple.draw(screen)
 
@@ -210,28 +201,27 @@ def main():
         snake.update_direction()
         snake.move()
 
-        # Проверка на столкновение. Выводим "экран лузера".
         # Если голова оказалась в теле, то выполняем тело цикла.
-        for _ in range(1, len(snake.positions)):
-            # Если голова оказалась в теле, то выполняем тело цикла.
-            if snake.get_head_position() == snake.positions[_]:
-                car_surf = pg.image.load("game-over.jpg")
-                car_rect = car_surf.get_rect(
-                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-                )
-                screen.blit(car_surf, car_rect)
-                pg.display.update()
-                clock.tick(0.5)
-                snake.reset()
-                SPEED = 5
-                screen.fill(BOARD_BACKGROUND_COLOR)
-                # Рисуем новое яблоко.
-                apple.draw(screen)
-                break
+        if snake.get_head_position() in snake.positions[2:]:
+            # Выводим "экран лузера".
+            car_surf = pg.image.load("game-over.jpg")
+            car_rect = car_surf.get_rect(
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            )
+            screen.blit(car_surf, car_rect)
+            pg.display.update()
+            # Задержка.
+            clock.tick(0.5)
+            # "Перезагружаем" игру.
+            snake.reset()
+            SPEED = 5
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            # Рисуем новое яблоко.
+            apple.draw(screen)
 
         # Если змея съела яблоко:
         if snake.get_head_position() == apple.position:
-            # "Удлиняем" змею
+            # "Удлиняем" змею.
             snake.length += 1
             # "Кидаем" новое яблоко.
             apple.randomize_position(snake.positions)
@@ -240,15 +230,17 @@ def main():
             # Увеличиваем скорость.
             SPEED += 1
 
-        # проверяем на выигрышь и выводим "экран победителя"
-        if SPEED == 30:
+        # Проверяем на выигрышь и выводим "экран победителя".
+        if SPEED == 30:  # В моем случае длина и скорость взаимосвязаны.
             car_surf = pg.image.load("win.jpg")
             car_rect = car_surf.get_rect(
                 center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
             )
             screen.blit(car_surf, car_rect)
             pg.display.update()
+            # Задержка.
             clock.tick(0.5)
+            # "Перезагружаем" игру.
             snake.reset()
             SPEED = 5
             screen.fill(BOARD_BACKGROUND_COLOR)
