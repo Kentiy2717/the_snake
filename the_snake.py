@@ -79,17 +79,23 @@ class GameObject:
 class Apple(GameObject):
     """Наследуемый класс описывающий яблоко и действия с ним"""
 
-    def __init__(self, apple_position=apple_position_start) -> None:
+    def __init__(self, snake_positions=None,
+                 apple_position=apple_position_start) -> None:
         self.body_color = RED
         self.position = apple_position
+        self.randomize_position(snake_positions)
 
-    def randomize_position(self, snake_positions):
+    def randomize_position(self, snake_positions=None):
         """Метод задачи координат случайного положения яблока на поле"""
-        while self.position in snake_positions:
-            self.position = (
-                randint(0, GRID_WIDTH - 1) * GRID_SIZE,
-                randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-            )
+        if snake_positions:
+            while self.position in snake_positions:
+                self.position = (
+                    randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                    randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+                )
+        else:
+            self.position = (randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                             randint(0, GRID_HEIGHT - 1) * GRID_SIZE)
 
     def draw(self, surface):
         """Метод отрисовки яблока на игровом поле"""
@@ -188,7 +194,7 @@ def main():
     pg.init()
 
     snake = Snake()
-    apple = Apple()
+    apple = Apple(snake.positions)
     # Рисуем первое яблоко.
     apple.draw(screen)
 
